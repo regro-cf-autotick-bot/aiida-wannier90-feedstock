@@ -1,8 +1,10 @@
 {% set name = "aiida-wannier90" %}
 {% set version = "2.0.1" %}
+{% set build = 1 %}
+{% set name_code = name + ".code" %}
 
 package:
-  name: {{ name|lower }}
+  name: {{ name|lower }}.meta
   version: {{ version }}
 
 source:
@@ -10,26 +12,48 @@ source:
   sha256: 884bc521e5a3ac6eb090caab5a733994b0e13a7850ca8091da5dde65df06007e
 
 build:
+  number: {{ build }}
   noarch: python
-  script: {{ PYTHON }} -m pip install . -vv
-  number: 0
 
 requirements:
-  host:
-    - pip
-    - python >=3.6
-    - reentry
   run:
-    - aiida-core >=1.0.0,<2
-    - python >=3.6
+  - {{ pin_subpackage(name, exact=True) }}
+  - {{ pin_subpackage(name_code, exact=True) }}
 
-test:
-  imports:
-    - aiida_wannier90
-  commands:
-    - pip check
-  requires:
-    - pip
+
+outputs:
+
+  - name:  {{ name }}
+    build:
+      noarch: python
+      script: 'python -m pip install . --no-deps --ignore-installed -vvv '
+    requirements:
+      host:
+        - pip
+        - python >=3.6
+        - reentry
+      run:
+        - aiida-core >=1.0.0,<2
+        - python >=3.6
+      run_constrained:
+        - {{ name_code }} =={{ version }}
+    test:
+      imports:
+        - aiida_wannier90
+      commands:
+        - pip check
+      requires:
+        - pip
+
+  - name: {{ name_code }}
+    build:
+      noarch: python
+    requirements:
+      run:
+        - wannier90 >=1,<4
+    test:
+      commands:
+        - which wannier90.x
 
 about:
   home: https://github.com/aiidateam/aiida-wannier90
